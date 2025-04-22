@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>خريطة مباني حلب حسب درجة الضرر</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Tahoma', Arial, sans-serif;
+        }
+        #header {
+            background: #2c3e50;
+            color: white;
+            padding: 10px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        #map-container {
+            height: calc(100vh - 60px);
+            position: relative;
+        }
+        #map {
+            height: 100%;
+        }
+        .legend {
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 5px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            line-height: 1.6;
+        }
+        .legend i {
+            width: 18px;
+            height: 18px;
+            display: inline-block;
+            margin-left: 8px;
+            border: 1px solid #ddd;
+        }
+        .leaflet-popup-content {
+            min-width: 250px;
+        }
+        .leaflet-popup-content h3 {
+            margin: 0 0 10px;
+            color: #2c3e50;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+        }
+        .building-info table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .building-info td {
+            padding: 5px 0;
+            vertical-align: top;
+        }
+        .building-info td:first-child {
+            font-weight: bold;
+            width: 40%;
+            color: #34495e;
+        }
+        #search-box {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            z-index: 1000;
+            width: 250px;
+        }
+        #search {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .damage-none { color: #27ae60; }
+        .damage-light { color: #f39c12; }
+        .damage-medium { color: #e67e22; }
+        .damage-heavy { color: #e74c3c; }
+        .damage-destroyed { color: #7f8c8d; }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>خريطة مباني حلب حسب درجة الضرر</h1>
+    </div>
+    
+    <div id="map-container">
+        <div id="map"></div>
+        <div id="search-box">
+            <input type="text" id="search" placeholder="ابحث عن مبنى...">
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script>
+        // 1. تهيئة الخريطة
+        var map = L.map('map').setView([36.2021, 37.1343], 14);
+
+        // 2. إضافة طبقة الخريطة
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://openstreetmap.org">OpenStreetMap</a>'
+        }).addTo(map);
+
+        // 3. بيانات المباني مع درجات الضرر
+        var buildingsData = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id": 1,
+                        "name": "مجمع الأسواق التجارية",
+                        "type": "تجاري",
+                        "floors": 6,
+                        "damage": "none",
+                        "damage_desc": "سليم",
+                        "year": 2015,
+                        "address": "شارع الجمهورية",
+                        "last_inspection": "2023-05-15"
+                    },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [37.1325, 36.2018],
+                            [37.1332, 36.2018],
+                            [37.1332, 36.2023],
+                            [37.1325, 36.2023],
+                            [37.1325, 36.2018]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id": 2,
+                        "name": "عمارة السعادة",
+                        "type": "سكني",
+                        "floors": 4,
+                        "damage": "light",
+                        "damage_desc": "أضرار طفيفة",
+                        "year": 2008,
+                        "address": "حي الجديدة",
+                        "last_inspection": "2023-04-20"
+                    },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [37.1335, 36.2025],
+                            [37.1340, 36.2025],
+                            [37.1340, 36.2030],
+                            [37.1335, 36.2030],
+                            [37.1335, 36.2025]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id": 3,
+                        "name": "مدرسة حلب الثانوية",
+                        "type": "تعليمي",
+                        "floors": 3,
+                        "damage": "medium",
+                        "damage_desc": "أضرار متوسطة",
+                        "year": 1992,
+                        "address": "شارع الجامعة",
+                        "last_inspection": "2023-03-10"
+                    },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [37.1345, 36.2010],
+                            [37.1355, 36.2010],
+                            [37.1355, 36.2018],
+                            [37.1345, 36.2018],
+                            [37.1345, 36.2010]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id": 4,
+                        "name": "مستشفى حلب الجراحي",
+                        "type": "صحي",
+                        "floors": 5,
+                        "damage": "heavy",
+                        "damage_desc": "أضرار جسيمة",
+                        "year": 2003,
+                        "address": "شارع المستشفى",
+                        "last_inspection": "2023-02-05"
+                    },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [37.1315, 36.2030],
+                            [37.1325, 36.2030],
+                            [37.1325, 36.2038],
+                            [37.1315, 36.2038],
+                            [37.1315, 36.2030]
+                        ]]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "properties": {
+                        "id": 5,
+                        "name": "مركز البلدية القديم",
+                        "type": "حكومي",
+                        "floors": 4,
+                        "damage": "destroyed",
+                        "damage_desc": "مدمر",
+                        "year": 1980,
+                        "address": "ساحة الشهداء",
+                        "last_inspection": "2023-01-15"
+                    },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [37.1355, 36.2025],
+                            [37.1365, 36.2025],
+                            [37.1365, 36.2032],
+                            [37.1355, 36.2032],
+                            [37.1355, 36.2025]
+                        ]]
+                    }
+                }
+            ]
+        };
+
+        // 4. دالة تحديد الألوان حسب درجة الضرر
+        function getDamageColor(damage) {
+            const colors = {
+                'none': '#27ae60',      // أخضر - سليم
+                'light': '#f1c40f',     // أصفر - أضرار طفيفة
+                'medium': '#e67e22',    // برتقالي - أضرار متوسطة
+                'heavy': '#e74c3c',     // أحمر - أضرار جسيمة
+                'destroyed': '#7f8c8d'  // رمادي - مدمر
+            };
+            return colors[damage] || '#95a5a6';
+        }
+
+        // 5. إنشاء طبقة المباني
+        var buildingsLayer = L.geoJSON(buildingsData, {
+            style: function(feature) {
+                return {
+                    fillColor: getDamageColor(feature.properties.damage),
+                    weight: 1,
+                    opacity: 1,
+                    color: '#fff',
+                    fillOpacity: 0.7,
+                    dashArray: feature.properties.damage === 'destroyed' ? '5, 5' : null
+                };
+            },
+            onEachFeature: function(feature, layer) {
+                const props = feature.properties;
+                const popupContent = `
+                    <div class="building-info">
+                        <h3>${props.name}</h3>
+                        <table>
+                            <tr><td>النوع:</td><td>${props.type}</td></tr>
+                            <tr><td>العنوان:</td><td>${props.address}</td></tr>
+                            <tr><td>الطوابق:</td><td>${props.floors}</td></tr>
+                            <tr><td>حالة الضرر:</td><td class="damage-${props.damage}">${props.damage_desc}</td></tr>
+                            <tr><td>سنة البناء:</td><td>${props.year}</td></tr>
+                            <tr><td>آخر تفتيش:</td><td>${props.last_inspection}</td></tr>
+                        </table>
+                    </div>
+                `;
+                
+                layer.bindPopup(popupContent);
+                layer.feature = feature;
+                
+                layer.on('mouseover', function() {
+                    this.setStyle({
+                        weight: 3,
+                        color: '#34495e',
+                        fillOpacity: 0.9
+                    });
+                });
+                
+                layer.on('mouseout', function() {
+                    buildingsLayer.resetStyle(this);
+                });
+            }
+        }).addTo(map);
+
+        // 6. إضافة مفتاح الخريطة
+        var legend = L.control({position: 'bottomright'});
+        legend.onAdd = function() {
+            var div = L.DomUtil.create('div', 'legend');
+            const damages = [
+                {level: 'none', desc: 'سليم'},
+                {level: 'light', desc: 'أضرار طفيفة'},
+                {level: 'medium', desc: 'أضرار متوسطة'},
+                {level: 'heavy', desc: 'أضرار جسيمة'},
+                {level: 'destroyed', desc: 'مدمر'}
+            ];
+            
+            div.innerHTML = '<h4>درجات الضرر</h4>';
+            damages.forEach(dmg => {
+                div.innerHTML += `
+                    <div>
+                        <i style="background:${getDamageColor(dmg.level)}"></i> ${dmg.desc}
+                    </div>
+                `;
+            });
+            
+            return div;
+        };
+        legend.addTo(map);
+
+        // 7. وظيفة البحث
+        document.getElementById('search').addEventListener('input', function(e) {
+            const term = e.target.value.toLowerCase();
+            buildingsLayer.eachLayer(layer => {
+                const feature = layer.feature;
+                const match = feature.properties.name.toLowerCase().includes(term) || 
+                             feature.properties.type.toLowerCase().includes(term) ||
+                             feature.properties.address.toLowerCase().includes(term) ||
+                             feature.properties.damage_desc.toLowerCase().includes(term);
+                
+                if (term && match) {
+                    layer.setStyle({
+                        weight: 3,
+                        color: '#000',
+                        fillOpacity: 0.9
+                    });
+                    if (!map.getBounds().contains(layer.getBounds())) {
+                        map.fitBounds(layer.getBounds());
+                    }
+                } else {
+                    buildingsLayer.resetStyle(layer);
+                }
+            });
+        });
+
+        // 8. إضافة عناصر التحكم
+        L.control.layers({
+            "الخريطة العادية": L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'),
+            "الخريطة الفضائية": L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}')
+        }, {
+            "المباني": buildingsLayer
+        }, {
+            position: 'topright',
+            collapsed: false
+        }).addTo(map);
+
+        // 9. إضافة زر العودة
+        L.control({
+            position: 'topleft'
+        }).onAdd = function() {
+            var div = L.DomUtil.create('div', 'leaflet-bar leaflet-control');
+            div.innerHTML = '<a href="#" title="العودة إلى حلب">↻ حلب</a>';
+            div.onclick = () => {
+                map.setView([36.2021, 37.1343], 14);
+                return false;
+            };
+            return div;
+        }.addTo(map);
+
+        // 10. إضافة مقياس
+        L.control.scale({position: 'bottomleft'}).addTo(map);
+    </script>
+</body>
+</html>
